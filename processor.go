@@ -9,3 +9,13 @@ func countFailedProofs(proofs []SuccintProof) int {
 	}
 	return count
 }
+
+func countRunningProofs(proofs []SuccintProof) int {
+	count := 0
+	for _, proof := range proofs {
+		if proof.Status == "running" {
+			count++
+		}
+	}
+	return count
+}

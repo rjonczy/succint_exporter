@@ -91,5 +91,8 @@ func (c *SuccintCollector) processMetrics(data []SuccintProof, ch chan<- prometh
 	// total no of failed proofs
 	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(countFailedProofs(data)), SuccintProject, "FAILED")
 
+	// total no of running proofs
+	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(countRunningProofs(data)), SuccintProject, "RUNNING")
+
 	return nil
 }
