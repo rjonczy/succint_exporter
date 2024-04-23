@@ -17,6 +17,7 @@ import (
 
 var (
 	metricsPath = kingpin.Flag("metricspath", "Path under which to expose Prometheus metrics.").Default("/metrics").String()
+	succintUrl  = kingpin.Flag("succinturl", "Succint url to scrape").Default("https://alpha.succinct.xyz/api/proofs?project=@blasrodri/tendermintx-mainnet&limit=0&offset=0&status=all").String()
 )
 
 func init() {
@@ -36,10 +37,8 @@ func main() {
 	level.Info(logger).Log("msg", "Starting succint_exporter", "version", version.Info())
 	level.Info(logger).Log("msg", "Build context", "context", version.BuildContext())
 
-	// c := newCollectdCollector(logger)
-	// prometheus.MustRegister(c)
-
-	// startCollectdServer(context.Background(), c, logger)
+	c := newSuccintCollector(logger)
+	prometheus.MustRegister(c)
 
 	http.Handle(*metricsPath, promhttp.Handler())
 	if *metricsPath != "/" {
