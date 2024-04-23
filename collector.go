@@ -2,87 +2,94 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// MetricPrefix prefix for all metrics
+const MetricPrefix = "succint"
+
+// SuccintProject project name at succint
+const SuccintProject = "blasrodri"
+
 type SuccintCollector struct {
 	metrics map[string]*prometheus.Desc
 	logger  log.Logger
+	mu      *sync.Mutex
+}
+
+// create metrics array
+func addMetrics() map[string]*prometheus.Desc {
+
+	metrics := make(map[string]*prometheus.Desc)
+
+	metrics["proofs"] = prometheus.NewDesc(
+		prometheus.BuildFQName(MetricPrefix, "proofs", "total"),
+		"Total number of all proofs",
+		[]string{"project", "status"}, nil,
+	)
+	return metrics
 }
 
 func newSuccintCollector(logger log.Logger) *SuccintCollector {
 	c := &SuccintCollector{
-		logger: logger,
+		logger:  logger,
+		mu:      &sync.Mutex{},
+		metrics: addMetrics(),
 	}
 	return c
 }
 
 // Collect implements prometheus.Collector.
-func (c SuccintCollector) Collect(ch chan<- prometheus.Metric) {
+func (c *SuccintCollector) Collect(ch chan<- prometheus.Metric) {
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	response, err := http.Get(*succintUrl)
 	if err != nil {
 		level.Error(c.logger).Log("msg", "Failed to make the API request", "err", err)
+		return
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		level.Error(c.logger).Log("msg", "Failed to read response body", "err", err)
+		return
 	}
 
 	var proofs []SuccintProof
 	if err := json.Unmarshal(body, &proofs); err != nil {
 		level.Error(c.logger).Log("msg", "Error parsing JSON", "err", err)
+		return
 	}
 
-	for _, record := range proofs {
-		fmt.Printf("ID: %s, Status: %s, CreatedAt: %s\n", record.ID, record.Status, record.CreatedAt)
-	}
-
-	fmt.Println("----")
-	fmt.Println(len(proofs))
-	fmt.Println("----")
-
-	// data := []*Datum{}
-	// var err error
-	// scrape
-	// if len(e.TargetURLs()) > 0 {
-	// 	data, err = e.gatherData()
-	// 	if err != nil {
-	// 		log.Errorf("Error gathering Data from remote API: %v", err)
-	// 		return
-	// 	}
-	// }
-
-	// rates, err := e.getRates()
-	// if err != nil {
-	// 	log.Errorf("Error gathering Rates from remote API: %v", err)
-	// 	return
-	// }
-
-	// Set prometheus gauge metrics using the data gathered
-	// err = e.processMetrics(data, rates, ch)
-
-	// if err != nil {
-	// 	log.Error("Error Processing Metrics", err)
-	// 	return
-	// }
-
-	// log.Info("All Metrics successfully collected")
+	c.processMetrics(proofs, ch)
 
 }
 
 // Describe implements prometheus.Collector.
-func (c SuccintCollector) Describe(ch chan<- *prometheus.Desc) {
+func (c *SuccintCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, m := range c.metrics {
 		ch <- m
 	}
 
+}
+
+// processMetrics - processes the response data and sets the metrics
+func (c *SuccintCollector) processMetrics(data []SuccintProof, ch chan<- prometheus.Metric) error {
+
+	// total no of proofs
+	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(len(data)), SuccintProject, "ALL")
+
+	// total no of failed proofs
+	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(countFailedProofs(data)), SuccintProject, "FAILED")
+
+	return nil
 }
