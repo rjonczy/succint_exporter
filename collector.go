@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -51,7 +52,10 @@ func (c *SuccintCollector) Collect(ch chan<- prometheus.Metric) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	response, err := http.Get(*succintUrl)
+	level.Debug(c.logger).Log("msg", "Started metrics collection")
+
+	succintUrl := fmt.Sprintf("https://alpha.succinct.xyz/api/proofs?project=%s/%s&limit=0&offset=0&status=all", *succintProjectName, *succintProjectEnvName)
+	response, err := http.Get(succintUrl)
 	if err != nil {
 		level.Error(c.logger).Log("msg", "Failed to make the API request", "err", err)
 		return
@@ -71,6 +75,8 @@ func (c *SuccintCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	c.processMetrics(proofs, ch)
+
+	level.Debug(c.logger).Log("msg", "Stopped metrics collection")
 
 }
 

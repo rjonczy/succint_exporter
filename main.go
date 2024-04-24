@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	metricsPath = kingpin.Flag("metricspath", "Path under which to expose Prometheus metrics.").Default("/metrics").String()
-	succintUrl  = kingpin.Flag("succinturl", "Succint url to scrape").Default("https://alpha.succinct.xyz/api/proofs?project=@blasrodri/tendermintx-mainnet&limit=0&offset=0&status=all").String()
+	metricsPath           = kingpin.Flag("metricspath", "Path under which to expose Prometheus metrics.").Default("/metrics").String()
+	succintProjectName    = kingpin.Flag("succintprojectname", "Succint's project name").Default("@blasrodri").String()
+	succintProjectEnvName = kingpin.Flag("succintprojectenv", "Succint's project environment").Default("tendermintx-mainnet").String()
 )
 
 func init() {
@@ -27,7 +28,6 @@ func init() {
 func main() {
 	promlogConfig := &promlog.Config{}
 	toolkitFlags := kingpinflag.AddFlags(kingpin.CommandLine, ":9103")
-
 	flag.AddFlags(kingpin.CommandLine, promlogConfig)
 	kingpin.Version(version.Print("succint_exporter"))
 	kingpin.HelpFlag.Short('h')
