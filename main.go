@@ -16,9 +16,8 @@ import (
 )
 
 var (
-	metricsPath           = kingpin.Flag("metricspath", "Path under which to expose Prometheus metrics.").Default("/metrics").String()
-	succintProjectName    = kingpin.Flag("succintprojectname", "Succint's project name").Default("@blasrodri").String()
-	succintProjectEnvName = kingpin.Flag("succintprojectenv", "Succint's project environment").Default("tendermintx-mainnet").String()
+	metricsPath    = kingpin.Flag("metrics.path", "Path under which to expose Prometheus metrics.").Default("/metrics").String()
+	succintProject = kingpin.Flag("succint.project", "Succint's project name").Default("@blasrodri/tendermintx-mainnet").String()
 )
 
 func init() {

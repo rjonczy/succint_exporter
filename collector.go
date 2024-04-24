@@ -34,6 +34,11 @@ func addMetrics() map[string]*prometheus.Desc {
 		"Total number of all proofs",
 		[]string{"project", "status"}, nil,
 	)
+	metrics["timestamp"] = prometheus.NewDesc(
+		prometheus.BuildFQName(MetricPrefix, "proof", "timestamp"),
+		"Timestamp of latest proof",
+		[]string{"project", "status"}, nil,
+	)
 	return metrics
 }
 
@@ -54,7 +59,8 @@ func (c *SuccintCollector) Collect(ch chan<- prometheus.Metric) {
 
 	level.Debug(c.logger).Log("msg", "Started metrics collection")
 
-	succintUrl := fmt.Sprintf("https://alpha.succinct.xyz/api/proofs?project=%s/%s&limit=0&offset=0&status=all", *succintProjectName, *succintProjectEnvName)
+	succintUrl := fmt.Sprintf("https://alpha.succinct.xyz/api/proofs?project=%s&limit=0&offset=0&status=all", *succintProject)
+	level.Debug(c.logger).Log("msg", "Calling url: ", "succintUrl", succintUrl)
 	response, err := http.Get(succintUrl)
 	if err != nil {
 		level.Error(c.logger).Log("msg", "Failed to make the API request", "err", err)
@@ -92,13 +98,19 @@ func (c *SuccintCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *SuccintCollector) processMetrics(data []SuccintProof, ch chan<- prometheus.Metric) error {
 
 	// total no of proofs
-	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(len(data)), SuccintProject, "ALL")
+	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(len(data)), *succintProject, "ALL")
 
 	// total no of failed proofs
-	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(countFailedProofs(data)), SuccintProject, "FAILED")
+	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(countFailedProofs(data)), *succintProject, "FAILED")
 
 	// total no of running proofs
-	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(countRunningProofs(data)), SuccintProject, "RUNNING")
+	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(countRunningProofs(data)), *succintProject, "RUNNING")
+
+	// timestamp of latest SUCCESS
+	ch <- prometheus.MustNewConstMetric(c.metrics["timestamp"], prometheus.GaugeValue, float64(getLatestSuccessTimestamp(data).Unix()), *succintProject, "FAILED")
+
+	// timestamp of latest FAILED
+	ch <- prometheus.MustNewConstMetric(c.metrics["timestamp"], prometheus.GaugeValue, float64(getLatestFailureTimestamp(data).Unix()), *succintProject, "SUCCESS")
 
 	return nil
 }
