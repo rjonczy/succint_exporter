@@ -107,10 +107,10 @@ func (c *SuccintCollector) processMetrics(data []SuccintProof, ch chan<- prometh
 	ch <- prometheus.MustNewConstMetric(c.metrics["proofs"], prometheus.GaugeValue, float64(countRunningProofs(data)), *succintProject, "RUNNING")
 
 	// timestamp of latest SUCCESS
-	ch <- prometheus.MustNewConstMetric(c.metrics["timestamp"], prometheus.GaugeValue, float64(getLatestSuccessTimestamp(data).Unix()), *succintProject, "FAILED")
+	ch <- prometheus.MustNewConstMetric(c.metrics["timestamp"], prometheus.GaugeValue, float64(getLatestSuccessTimestamp(data).Unix()), *succintProject, "SUCCESS")
 
 	// timestamp of latest FAILED
-	ch <- prometheus.MustNewConstMetric(c.metrics["timestamp"], prometheus.GaugeValue, float64(getLatestFailureTimestamp(data).Unix()), *succintProject, "SUCCESS")
+	ch <- prometheus.MustNewConstMetric(c.metrics["timestamp"], prometheus.GaugeValue, float64(getLatestFailureTimestamp(data).Unix()), *succintProject, "FAILED")
 
 	return nil
 }
