@@ -12,4 +12,4 @@ COPY --from=builder /app/succint_exporter /succint_exporter
 
 EXPOSE 9103
 
-CMD ["/succint_exporter"]
+ENTRYPOINT ["/succint_exporter"]
