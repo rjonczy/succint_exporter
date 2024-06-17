@@ -4,6 +4,7 @@ type SuccintProof struct {
 	ID           string      `json:"id"`
 	Status       string      `json:"status"`
 	CreatedAt    string      `json:"created_at"`
+	UpdatedAt    string      `json:"updated_at"`
 	ProofRequest interface{} `json:"proof_request"`
 	ProofRelease interface{} `json:"proof_release"`
 	Edges        interface{} `json:"edges"`
